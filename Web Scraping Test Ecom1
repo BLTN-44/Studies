@@ -1,0 +1,95 @@
+#---------------------------------------------------------------------
+# PREPARAR PYCHARM - Arquivo .txt para gravar todas as libs instaladas no projeto
+#---------------------------------------------------------------------
+
+# pip freeze > requirements.txt
+# pip install pip-chill
+# pip-chill > requirements.txt
+
+#---------------------------------------------------------------------
+# Instalando Libs
+#---------------------------------------------------------------------
+
+# pip install beautifulsoup4
+# pip install requests
+
+#---------------------------------------------------------------------
+# Importando Libs
+#---------------------------------------------------------------------
+
+from bs4 import BeautifulSoup
+import requests
+import smtplib
+import email.message
+
+#---------------------------------------------------------------------
+# Importando Libs
+#---------------------------------------------------------------------
+
+url = 'https://www.brasiltronic.com.br/kit-camera-instax-mini-11-azul-bolsacrystal-filme-p1329212'
+
+#---------------------------------------------------------------------
+# PASSAR USER AGENT > HEADERS para identificar a requisição da URL
+#---------------------------------------------------------------------
+
+# Digitar no buscador do GOOGLE: my browser agent
+
+headers = {'User-Agent': "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36"}
+
+#---------------------------------------------------------------------
+# CRIAR VARIÁVEIS PARA GUARDAR INFORMAÇÕES
+#---------------------------------------------------------------------
+
+site = requests.get(url, headers=headers)
+soup = BeautifulSoup(site.content, 'html.parser')
+
+#---------------------------------------------------------------------
+# CRIAR VARIÁVEIS E COLETAR E TRATAR DADOS COLETADOS
+#---------------------------------------------------------------------
+
+title = soup.find('h1', class_ = 'name').get_text()                     # Cabeçalho, nome do produto //.get_text() para vir somente o texto.
+price = soup.find('strong', class_ = 'sale-price').get_text().strip()   #.strip() para tirar espaços antes e depois.
+
+num_price = price[3:9]                      # Pegar da 3a posição à 9a posição - vir somente números que preciso.
+num_price = num_price.replace('.','')       # Tirar o ponto para deixar somente valor. Neste exemplo por ser menor que R$ 1.000,00 não tem.
+num_price = num_price.replace(',','.')      # Substituir vírgula em ponto (leirura US)
+num_price = float(num_price)                # Transformar string em número com vírgula.
+
+#---------------------------------------------------------------------
+# CRIAR FUNÇÃO PARA ENVIAR E-MAIL
+#---------------------------------------------------------------------
+
+def send_email():
+    email_content = """
+    https://www.brasiltronic.com.br/kit-camera-instax-mini-11-azul-bolsacrystal-filme-p1329212
+    """
+    msg = email.message.Message()
+    msg['Subject'] = 'Preço Câmera BAIXOU!!!'   # Assunto que deseja que seja escrito no e-mail.
+
+    msg['From'] = 'xxxxx@gmail.com'     # Colocar o e-mail que deseja enviar o aviso.
+    msg['To'] = 'xxxxx@gmail.com'       # Colocar o e-mail que deseja receber o aviso.
+    password = 'xxxxx'.                 # Colocar sua senha.
+    msg.add_header('Content-Type', 'text/html')
+    msg.set_payload(email_content)
+
+    s = smtplib.SMTP('smtp.gmail.com: 587')
+    s.starttls()
+    s.login(msg['From'], password)
+    s.sendmail(msg['From'], [msg['To']], msg.as_string())
+
+    print("Sucesso ao enviar email")
+    
+#---------------------------------------------------------------------
+# FUNÇÃO DO PREÇO ALVO PARA ENVIAR E-MAIL
+#---------------------------------------------------------------------
+
+if (num_price < 300):       # Valor do preço alvo que o programa enviará e-mail.
+    send_email()            # Precisa configurar conta para Acesso a app menos seguro e ativar.
+    
+#---------------------------------------------------------------------
+# ROTINA PARA SISTEMA RODAR ARQUIVO .py E RODAR PROGRAMA
+#---------------------------------------------------------------------
+
+# Para programa ficar executando de hora em hora ou dia a dia, via UBUNTU
+# No Terminal digitar: crontab -e
+# Para monitorar de hora em hora: 1 * * * * /fabrimatt/python/WebScrapingEcom1.py
